@@ -9,14 +9,11 @@ import io.micrometer.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.UnknownHttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
@@ -25,13 +22,14 @@ import java.util.Optional;
 public class GitHubUserInfoServiceImpl implements GitHubUserInfoService {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubUserInfoServiceImpl.class);
-    private final RestClient gitHubRestClient;
     private final RequestCounterRepository requestCounterRepository;
 
+    private final RestTemplate restTemplate;
+
     @Autowired
-    public GitHubUserInfoServiceImpl(@Qualifier("gitHubRestClient")RestClient gitHubRestClient, RequestCounterRepository requestCounterRepository) {
-        this.gitHubRestClient = gitHubRestClient;
+    public GitHubUserInfoServiceImpl(RequestCounterRepository requestCounterRepository, RestTemplate restTemplate) {
         this.requestCounterRepository = requestCounterRepository;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -60,15 +58,14 @@ public class GitHubUserInfoServiceImpl implements GitHubUserInfoService {
     public ResponseEntity<?> getResponseFromGitHubAPI(@NonNull String login) {
         ResponseEntity<?> toReturn;
         try {
-            toReturn = gitHubRestClient.get()
-                    .uri("/users/" + login)
-                    .retrieve()
-                    .toEntity(GitHubUserInfoAPIResponse.class);
-        }catch (HttpClientErrorException | HttpServerErrorException | UnknownHttpStatusCodeException exc){
-            toReturn = ResponseEntity.internalServerError().body("Error getting response from GitHub API - " + exc.getClass() + ": " + exc.getMessage());
+            String resourceUrl = "/users/"+login;
+            toReturn = restTemplate.getForEntity(resourceUrl , GitHubUserInfoAPIResponse.class);
+        }catch (RestClientException rce){
+            toReturn = ResponseEntity.internalServerError().body("Error getting response from GitHub API - " + rce.getClass() + ": " + rce.getMessage());
         }
         return toReturn;
     }
+
 
     public Double magicCalculation(GitHubUserInfoAPIResponse apiResponse) {
         if (apiResponse.followers()!=null && apiResponse.followers() >0 && apiResponse.publicRepos()!=null && apiResponse.publicRepos()>0){

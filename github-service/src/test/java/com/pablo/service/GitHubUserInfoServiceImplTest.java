@@ -26,9 +26,6 @@ import java.util.Optional;
 class GitHubUserInfoServiceImplTest {
 
     @Mock
-    RestClient gitHubRestClient;
-
-    @Mock
     RequestCounterRepository requestCounterRepository;
 
     @InjectMocks
@@ -36,7 +33,7 @@ class GitHubUserInfoServiceImplTest {
 
     @BeforeAll
     public static void init() {
-        MockitoAnnotations.openMocks(GitHubUserInfoServiceImpl.class);
+        MockitoAnnotations.openMocks(GitHubUserInfoServiceImplTest.class);
     }
 
     @Test
@@ -76,14 +73,6 @@ class GitHubUserInfoServiceImplTest {
         Assertions.assertThat(responseEntity.getBody()).isEqualTo(response.getBody());
 
     }
-
-/*    @Test
-    public void shouldReturnInternalServerErrorOnGitHubAPIRequest(){
-        ResponseEntity response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-
-        Mockito.when(gitHubRestClient.get()).thenReturn(uriSpec);
-
-    }*/
 
     @DisplayName("Magic calculation test cases")
     @ParameterizedTest(name = "{0} followers and {1} public repos should give {2}")
